@@ -14,8 +14,7 @@ public class SocketConfig {
 
         config.setHostname("0.0.0.0");
         config.setPort(8081);
-        config.setOrigin("*");
-        // 추후 서비스 배포 완료시 : config.setOrigin("https://your-frontend.com");
+        config.setOrigin("https://speak-view.vercel.app/");
 
         config.setMaxFramePayloadLength(1024 * 1024); // 1MB
         config.setMaxHttpContentLength(1024 * 1024);  // 1MB
