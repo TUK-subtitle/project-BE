@@ -102,14 +102,12 @@ public class RealtimeSttService {
             e.printStackTrace();
         }
 
-        // STT 응답 처리
-        Flux<String> recv = ws.receive()
-                .map(WebSocketMessage::getPayloadAsText);
-
-        recv.subscribe(this::handleSonioxMessage);
-
         flushAudioQueue();
-        return Mono.empty();
+
+        return ws.receive()
+                .map(WebSocketMessage::getPayloadAsText)
+                .doOnNext(this::handleSonioxMessage)
+                .then();
     }
 
     /**
