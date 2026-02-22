@@ -52,6 +52,7 @@ dependencies {
 	implementation 'org.java-websocket:Java-WebSocket:1.5.3'
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
 
+	runtimeOnly 'org.postgresql:postgresql'
 }
 
 tasks.named('test') {

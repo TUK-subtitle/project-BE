@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: speakview
+  datasource:
+    url: jdbc:postgresql://speakview-db.chuw2aeo6lvd.ap-northeast-2.rds.amazonaws.com:5432/speakview
+    username: postgres
+    password: ${RDS_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        show_sql: false

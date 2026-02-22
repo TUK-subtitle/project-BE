@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: speakview
+  profiles:
+      active: local
+      group:
+        local: local
+        prod: prod
