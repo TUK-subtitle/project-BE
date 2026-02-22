@@ -51,4 +51,5 @@ jobs:
             # RDS 비밀번호를 환경변수로 주입하며 도커를 백그라운드(-d)로 실행
             sudo docker run -d -p 8080:8080 --name speakview-server \
               -e RDS_PASSWORD=${{ secrets.RDS_PASSWORD }} \
+              -e SONIOX_API_KEY=${{ secrets.SONIOX_API_KEY }} \
               ${{ secrets.DOCKER_USERNAME }}/speakview-be:develop
