@@ -70,9 +70,14 @@ public class RealtimeSttService {
         });
 
         // 오디오 데이터 수신
-        socketIOServer.addEventListener("stt:audio", byte[].class, (client, data, ackSender) -> {
-            System.out.println("[오디오] 수신, 길이: " + data.length);
-            sendAudioFrame(data);
+        socketIOServer.addEventListener("stt:audio", Object.class, (client, data, ackSender) -> {
+            if (data instanceof byte[]) {
+                byte[] audioData = (byte[]) data;
+                System.out.println("[오디오] 수신, 길이: " + audioData.length);
+                sendAudioFrame(audioData);
+            } else {
+                System.out.println("[경고] 예상치 못한 데이터 타입: " + data.getClass().getName());
+            }
         });
     }
 
