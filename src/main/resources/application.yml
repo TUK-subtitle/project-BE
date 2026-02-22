@@ -6,3 +6,6 @@ spring:
       group:
         local: local
         prod: prod
+
+soniox:
+  api-key: ${SONIOX_API_KEY}

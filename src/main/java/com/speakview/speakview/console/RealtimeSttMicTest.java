@@ -1,13 +1,11 @@
 package com.speakview.speakview.console;
 
 import com.speakview.speakview.domain.ai.service.RealtimeSttService;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.sound.sampled.*;
 import java.util.Arrays;
-import java.util.Base64;
 
 @Component
 public class RealtimeSttMicTest {
@@ -15,7 +13,6 @@ public class RealtimeSttMicTest {
     @Autowired
     private RealtimeSttService sttService;
 
-    @PostConstruct
     public void startRealtimeMic() throws Exception {
         System.out.println("마이크 실시간 STT 테스트 시작...");
 

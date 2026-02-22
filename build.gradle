@@ -44,9 +44,7 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
 	// 프론트와 통신을 위한 소켓io
-	implementation 'com.socketio4j:netty-socketio-spring-boot-starter:3.0.1'
-	implementation 'com.socketio4j:netty-socketio-spring:3.0.1'
-	implementation 'com.socketio4j:netty-socketio-core:3.0.1'
+	implementation 'com.corundumstudio.socketio:netty-socketio:2.0.9'
 
 	// Soniox 통신을 위한 웹소켓
 	implementation 'org.java-websocket:Java-WebSocket:1.5.3'

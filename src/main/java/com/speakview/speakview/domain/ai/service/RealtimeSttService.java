@@ -3,9 +3,10 @@ package com.speakview.speakview.domain.ai.service;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.socket.WebSocketMessage;
 import org.springframework.web.reactive.socket.WebSocketSession;
@@ -35,25 +36,52 @@ public class RealtimeSttService {
     private WebSocketSession session;
     private final Queue<byte[]> audioQueue = new ConcurrentLinkedQueue<>();
 
+    /**
+     * 최초 클라이언트 연결 시 Soniox WebSocket 연결
+     */
     public void initConnection() {
         ReactorNettyWebSocketClient client = new ReactorNettyWebSocketClient();
         client.execute(URI.create(SONIOX_WS_URL), this::handleSession).subscribe();
+        System.out.println("[Soniox] 연결 시도");
     }
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void initSocketListeners() {
-        socketIOServer.addConnectListener(client -> System.out.println("클라이언트 연결 성공: " + client.getSessionId()));
-        socketIOServer.addDisconnectListener(client -> System.out.println("클라이언트 연결 해제: " + client.getSessionId()));
+        // 클라이언트 연결
+        socketIOServer.addConnectListener(client -> {
+            System.out.println("[클라이언트] 연결 성공: " + client.getSessionId());
 
+            // 최초 연결 시 Soniox 연결
+            if (session == null || !session.isOpen()) {
+                initConnection();
+            }
+        });
+
+        // 클라이언트 연결 해제
+        socketIOServer.addDisconnectListener(client -> {
+            System.out.println("[클라이언트] 연결 해제: " + client.getSessionId());
+
+            // 모든 클라이언트가 끊기면 Soniox 연결 종료
+            if (socketIOServer.getAllClients().isEmpty() && session != null && session.isOpen()) {
+                session.close().subscribe();
+                session = null;
+                System.out.println("[Soniox] 연결 종료");
+            }
+        });
+
+        // 오디오 데이터 수신
         socketIOServer.addEventListener("stt:audio", byte[].class, (client, data, ackSender) -> {
-            System.out.println("오디오 데이터 수신, 길이: " + data.length);
+            System.out.println("[오디오] 수신, 길이: " + data.length);
             sendAudioFrame(data);
         });
     }
 
+    /**
+     * Soniox WebSocket 연결 처리
+     */
     private Mono<Void> handleSession(WebSocketSession ws) {
         this.session = ws;
-        System.out.println("Soniox 소켓 연결 성공");
+        System.out.println("[Soniox] 연결 성공");
 
         try {
             Map<String, Object> config = new HashMap<>();
@@ -69,16 +97,19 @@ public class RealtimeSttService {
             e.printStackTrace();
         }
 
-        // 서버에서 오는 STT 응답 처리
+        // STT 응답 처리
         Flux<String> recv = ws.receive()
                 .map(WebSocketMessage::getPayloadAsText);
 
         recv.subscribe(this::handleSonioxMessage);
 
         flushAudioQueue();
-        return Mono.never();
+        return Mono.empty();
     }
 
+    /**
+     * Soniox 메시지 처리
+     */
     private void handleSonioxMessage(String json) {
         try {
             JsonNode node = objectMapper.readTree(json);
@@ -97,8 +128,11 @@ public class RealtimeSttService {
 
                 String subtitle = sb.toString();
                 if (!subtitle.isEmpty()) {
+                    // 클라이언트가 하나 이상 연결되어 있을 때만 로그 출력
+                    if (!socketIOServer.getAllClients().isEmpty()) {
+                        System.out.println("[받아쓰는 중 ...] -> " + subtitle);
+                    }
                     subtitleService.broadcastSubtitle(subtitle, hasFinal);
-                    // System.out.println("[STT] " + (hasFinal ? "(최종) " : "") + subtitle);
                 }
             }
 
@@ -107,23 +141,32 @@ public class RealtimeSttService {
         }
     }
 
-    // 오디오 프레임 전송
+    /**
+     * 오디오 프레임 전송
+     */
     public void sendAudioFrame(byte[] rawPcmChunk) {
         if (session != null && session.isOpen()) {
             sendNow(rawPcmChunk);
         } else {
-            audioQueue.add(rawPcmChunk);
-            System.out.println("큐에 저장, WebSocket 연결 대기중...");
+            System.out.println("[오디오] WebSocket 연결 안됨, 데이터 버림");
         }
     }
 
+    /**
+     * Soniox로 바로 전송
+     */
     private void sendNow(byte[] rawPcm) {
         if (session != null && session.isOpen()) {
             session.send(Mono.just(session.binaryMessage(b -> b.wrap(ByteBuffer.wrap(rawPcm))))).subscribe();
         }
     }
 
+    /**
+     * 큐에 쌓인 오디오 flush
+     */
     private void flushAudioQueue() {
+        if (session == null || !session.isOpen()) return;
+
         while (!audioQueue.isEmpty()) {
             sendNow(audioQueue.poll());
         }
