@@ -1,3 +1,6 @@
 spring:
   application:
     name: speakview
+
+soniox:
+  api-key: ${SONIOX_API_KEY}
