@@ -69,14 +69,14 @@ public class RealtimeSttService {
             }
         });
 
-        // 오디오 데이터 수신
-        socketIOServer.addEventListener("stt:audio", Object.class, (client, data, ackSender) -> {
-            if (data instanceof byte[]) {
-                byte[] audioData = (byte[]) data;
+        // 오디오 데이터 수신 (Base64로 오는 경우)
+        socketIOServer.addEventListener("stt:audio", String.class, (client, base64Data, ackSender) -> {
+            try {
+                byte[] audioData = java.util.Base64.getDecoder().decode(base64Data);
                 System.out.println("[오디오] 수신, 길이: " + audioData.length);
                 sendAudioFrame(audioData);
-            } else {
-                System.out.println("[경고] 예상치 못한 데이터 타입: " + data.getClass().getName());
+            } catch (IllegalArgumentException e) {
+                System.out.println("[경고] Base64 디코딩 실패: " + e.getMessage());
             }
         });
     }
