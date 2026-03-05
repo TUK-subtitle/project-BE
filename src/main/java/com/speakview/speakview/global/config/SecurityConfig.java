@@ -29,6 +29,7 @@ public class SecurityConfig {
 
                 // 일단 전체 허용 -> 추후 보안 처리 예정
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyRequest().permitAll()
                 );
 
