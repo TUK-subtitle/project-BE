@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 public class SubtitleBroadcastService {
 
     private final SocketIOServer socketIOServer;
+    private final RealtimeSummaryService realtimeSummaryService;
 
     // 마지막 최종 문장
     private String lastFinalSubtitle = "";
@@ -26,6 +27,8 @@ public class SubtitleBroadcastService {
                 System.out.println("[최종] -> " + toSend);
                 socketIOServer.getBroadcastOperations()
                         .sendEvent("stt:subtitle_final", toSend);
+                // 최종 문장이 완성될 때마다 요약 버퍼에 담기
+                realtimeSummaryService.addSentenceToBuffer(toSend);
             }
         } else {
             System.out.println("[받아쓰는 중 ...] -> " + subtitle);

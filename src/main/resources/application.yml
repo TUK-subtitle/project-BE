@@ -9,3 +9,7 @@ spring:
 
 soniox:
   api-key: ${SONIOX_API_KEY}
+
+openapi:
+  api-key: ${GPT_API_KEY}
+  model: gpt-4o-mini

@@ -52,4 +52,5 @@ jobs:
             sudo docker run -d -p 8080:8080 -p 8081:8081 --name speakview-server \
               -e RDS_PASSWORD=${{ secrets.RDS_PASSWORD }} \
               -e SONIOX_API_KEY=${{ secrets.SONIOX_API_KEY }} \
+              -e GPT_API_KEY=${{ secrets.GPT_API_KEY }} \
               ${{ secrets.DOCKER_USERNAME }}/speakview-be:develop
