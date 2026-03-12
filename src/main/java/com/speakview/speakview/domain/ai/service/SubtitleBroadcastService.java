@@ -27,10 +27,6 @@ public class SubtitleBroadcastService {
                 socketIOServer.getBroadcastOperations()
                         .sendEvent("stt:subtitle_final", toSend);
             }
-        } else {
-            System.out.println("[받아쓰는 중 ...] -> " + subtitle);
-            socketIOServer.getBroadcastOperations()
-                    .sendEvent("stt:subtitle_live", subtitle);
         }
     }
 
