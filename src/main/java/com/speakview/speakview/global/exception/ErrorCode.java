@@ -11,7 +11,10 @@ public enum ErrorCode {
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증에 실패했습니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
     NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 리소스를 찾을 수 없습니다."),
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다."),
+
+    CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 강의 콘텐츠가 존재하지 않습니다."),
+    INVALID_MEMO_REQUEST(HttpStatus.BAD_REQUEST, "메모 요청이 올바르지 않습니다.");
 
     /* 예를 들어 사용자 관련 404 에러를 하고싶다면,
     NOT_FOUND_USER(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다.")

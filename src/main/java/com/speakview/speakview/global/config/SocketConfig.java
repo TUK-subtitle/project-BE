@@ -22,7 +22,6 @@ public class SocketConfig {
         config.setExceptionListener(new com.corundumstudio.socketio.listener.DefaultExceptionListener() {
             @Override
             public void onEventException(Exception e, java.util.List<Object> args, com.corundumstudio.socketio.SocketIOClient client) {
-                // NumberFormatException 로그가 너무 시끄럽다면 여기서 필터링 가능합니다.
                 if (e instanceof NumberFormatException) {
                     System.err.println("[Socket Error] 데이터 포맷 불일치 (바이너리 데이터 해석 오류)");
                 } else {

@@ -30,10 +30,6 @@ public class SubtitleBroadcastService {
                 // 최종 문장이 완성될 때마다 요약 버퍼에 담기
                 realtimeSummaryService.addSentenceToBuffer(toSend);
             }
-        } else {
-            System.out.println("[받아쓰는 중 ...] -> " + subtitle);
-            socketIOServer.getBroadcastOperations()
-                    .sendEvent("stt:subtitle_live", subtitle);
         }
     }
 
