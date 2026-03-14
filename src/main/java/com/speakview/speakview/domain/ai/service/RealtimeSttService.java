@@ -96,6 +96,9 @@ public class RealtimeSttService {
             config.put("sample_rate", 16000);
             config.put("num_channels", 1);
 
+            config.put("enable_speaker_diarization", true);
+            config.put("enable_endpoint_detection", true);
+
             String configJson = objectMapper.writeValueAsString(config);
             ws.send(Mono.just(ws.textMessage(configJson))).subscribe();
         } catch (Exception e) {
@@ -118,11 +121,19 @@ public class RealtimeSttService {
             JsonNode node = objectMapper.readTree(json);
 
             if (node.has("tokens")) {
+                int lastSpeaker = -1;
                 StringBuilder sb = new StringBuilder();
                 boolean hasFinal = false;
 
                 for (JsonNode token : node.path("tokens")) {
                     String text = token.path("text").asText("");
+                    int speaker = token.path("speaker").asInt(0);
+
+                    if (speaker != lastSpeaker) {
+                        sb.append("\nSpeaker ").append(speaker).append(": ");
+                        lastSpeaker = speaker;
+                    }
+
                     sb.append(text);
                     if (token.path("is_final").asBoolean(false)) {
                         hasFinal = true;
