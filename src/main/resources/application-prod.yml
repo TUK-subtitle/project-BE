@@ -2,7 +2,7 @@ spring:
   application:
     name: speakview
   datasource:
-    url: jdbc:postgresql://localhost:5432/speakview
+    url: jdbc:postgresql://${EC2_HOST}:5432/speakview
     username: speakview
     password: ${RDS_PASSWORD}
     driver-class-name: org.postgresql.Driver
