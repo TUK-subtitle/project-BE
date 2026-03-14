@@ -33,5 +33,5 @@ public class Memo {
     private String memoText;
 
     @Column(nullable = false, length = 20)
-    private String time;
+    private Integer timestamp;
 }
