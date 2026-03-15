@@ -122,6 +122,10 @@ public class RealtimeSummaryService {
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(GeminiDTO.Response.class)
+                .onErrorResume(org.springframework.web.reactive.function.client.WebClientResponseException.class, e -> {
+                    System.err.println("[Gemini API 상세 오류] " + e.getResponseBodyAsString());
+                    return Mono.empty();
+                })
                 .onErrorResume(Exception.class, e -> {
                     System.err.println("[Gemini API 일반 오류] " + e.getMessage());
                     return Mono.empty();
