@@ -1,24 +1,39 @@
 package com.speakview.speakview.domain.ai.service;
 
 import com.corundumstudio.socketio.SocketIOServer;
-import com.speakview.speakview.domain.ai.dto.ChatGptDTO;
 import com.speakview.speakview.domain.ai.dto.GeminiDTO;
+import com.speakview.speakview.domain.ai.entity.Content;
+import com.speakview.speakview.domain.ai.entity.Summary;
+import com.speakview.speakview.domain.ai.enums.SummaryType;
+import com.speakview.speakview.domain.ai.repository.ContentRepository;
+import com.speakview.speakview.domain.ai.repository.SummaryRepository;
+import com.speakview.speakview.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RealtimeSummaryService {
 
     private final SocketIOServer socketIOServer;
+    private final SummaryRepository summaryRepository;
+    private final ContentRepository contentRepository;
 
     @Value("${GPT_API_KEY}")
     private String gptApiKey;
@@ -32,79 +47,37 @@ public class RealtimeSummaryService {
     @Value("${gemini.api-url}")
     private String geminiApiUrl;
 
-    private final List<String> textBuffer = Collections.synchronizedList(new ArrayList<>());
+    private final Map<Long, List<String>> textBufferMap = new ConcurrentHashMap<>();
 
-    public void addSentenceToBuffer(String sentence) {
-        textBuffer.add(sentence);
+    public void addSentenceToBuffer(Long contentId, String sentence) {
+        textBufferMap.computeIfAbsent(contentId, k -> Collections.synchronizedList(new ArrayList<>())).add(sentence);
     }
 
     @Scheduled(fixedRate = 60000)
     public void processSummaryEveryMinute() {
-        // 1분 동안 아무말도 없어서 버퍼가 비어있으면 API 호출 생략
-        if (textBuffer.isEmpty()) {
-            return;
+        if (textBufferMap.isEmpty()) return;
+
+        // 버퍼에 쌓인 모든 강의(contentId)에 대해 1분 요약 진행
+        for (Map.Entry<Long, List<String>> entry : textBufferMap.entrySet()) {
+            Long contentId = entry.getKey();
+            List<String> buffer = entry.getValue();
+
+            if (buffer.isEmpty()) continue;
+
+            List<String> sentencesToSummarize;
+            synchronized (buffer) {
+                sentencesToSummarize = new ArrayList<>(buffer);
+                buffer.clear(); // 복사 후 비우기
+            }
+
+            String textToSummarize = String.join(" ", sentencesToSummarize);
+            log.info("[1분 경과] 강의 ID [{}] 요약 요청 텍스트: {}", contentId, textToSummarize);
+
+            requestSummaryToGemini(contentId, textToSummarize);
         }
-
-        List<String> sentencesToSummarize;
-
-        // 버퍼의 내용을 복사하고, 기존 버퍼는 비우기
-        synchronized (textBuffer) {
-            sentencesToSummarize = new ArrayList<>(textBuffer);
-            textBuffer.clear();
-        }
-
-        // 복사한 문장들을 하나의 긴 텍스트로 합치기
-        String textToSummarize = String.join(" ", sentencesToSummarize);
-        System.out.println("[1분 경과] 요약 요청 텍스트: " + textToSummarize);
-
-        // 상황에 따라 chatgpt, Gemini 변경
-        //requestSummaryToChatGpt(textToSummarize);
-        requestSummaryToGemini(textToSummarize);
     }
 
-    /**
-     * WebClient를 이용해 비동기로 ChatGPT API 호출
-     */
-    private void requestSummaryToChatGpt(String text) {
-        WebClient webClient = WebClient.builder()
-                .baseUrl("https://api.openai.com/v1/chat/completions")
-                .defaultHeader("Authorization", "Bearer " + gptApiKey)
-                .defaultHeader("Content-Type", "application/json")
-                .build();
-
-        String systemPrompt = "너는 실시간 회의/강의 내용을 요약하는 어시스턴트야. " +
-                "입력되는 텍스트는 음성 인식(STT) 결과라 오타나 문맥이 끊기는 부분이 있을 수 있어. " +
-                "최근 1분 동안 진행된 내용이니, 핵심만 파악해서 자연스럽게 요약해줘.";
-
-        List<ChatGptDTO.Message> messages = List.of(
-                new ChatGptDTO.Message("system", systemPrompt),
-                new ChatGptDTO.Message("user", text)
-        );
-
-        // gpt-4o-mini 모델 사용
-        ChatGptDTO.Request requestBody = new ChatGptDTO.Request(openAiModel, messages, 0.7);
-
-        webClient.post()
-                .bodyValue(requestBody)
-                .retrieve()
-                .bodyToMono(ChatGptDTO.Response.class)
-                .onErrorResume(org.springframework.web.reactive.function.client.WebClientResponseException.class, e -> {
-                    System.err.println("[ChatGPT API 상세 오류] " + e.getResponseBodyAsString());
-                    return Mono.empty();
-                })
-                .onErrorResume(Exception.class, e -> {
-                    System.err.println("[ChatGPT API 일반 오류] " + e.getMessage());
-                    return Mono.empty();
-                })
-                .subscribe(response -> {
-                    if (response != null && response.getChoices() != null && !response.getChoices().isEmpty()) {
-                        String summaryResult = response.getChoices().get(0).getMessage().getContent();
-                        broadcastSummary(summaryResult);
-                    }
-                });
-    }
-
-    private void requestSummaryToGemini(String text) {
+    private void requestSummaryToGemini(Long contentId, String text) {
         WebClient webClient = WebClient.builder().build();
 
         String prompt = "너는 실시간 회의/강의 내용을 요약하는 어시스턴트야. " +
@@ -122,28 +95,93 @@ public class RealtimeSummaryService {
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(GeminiDTO.Response.class)
-                .onErrorResume(org.springframework.web.reactive.function.client.WebClientResponseException.class, e -> {
-                    System.err.println("[Gemini API 상세 오류] " + e.getResponseBodyAsString());
-                    return Mono.empty();
-                })
                 .onErrorResume(Exception.class, e -> {
-                    System.err.println("[Gemini API 일반 오류] " + e.getMessage());
+                    log.error("[Gemini 1분 요약 API 오류] 강의 ID [{}]: {}", contentId, e.getMessage());
                     return Mono.empty();
                 })
                 .subscribe(response -> {
                     if (response != null && response.getCandidates() != null && !response.getCandidates().isEmpty()) {
                         String summaryResult = response.getCandidates().get(0).getContent().getParts().get(0).getText();
+
+                        saveSummaryToDb(contentId, summaryResult, Summary.SummaryType.MINUTE);
+
                         broadcastSummary(summaryResult);
                     }
                 });
     }
 
-    /**
-     * 생성된 요약을 프론트엔드로 브로드캐스트
-     */
+    @Transactional
+    public void saveSummaryToDb(Long contentId, String summaryText, Summary.SummaryType type) {
+        Content content = contentRepository.findById(contentId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 강의를 찾을 수 없습니다. ID: " + contentId));
+
+        User user = content.getUser();
+
+        Summary summary = Summary.builder()
+                .user(user)
+                .content(content)
+                .summaryText(summaryText)
+                .summaryType(type)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        summaryRepository.save(summary);
+        log.info("[DB 저장 완료] 강의 ID [{}], 타입 [{}]", contentId, type);
+    }
+
     private void broadcastSummary(String summary) {
-        System.out.println("[ChatGPT 1분 요약 완료] -> " + summary);
-        socketIOServer.getBroadcastOperations()
-                .sendEvent("stt:summary", summary);
+        log.info("[Gemini 1분 요약 브로드캐스트] -> {}", summary);
+        socketIOServer.getBroadcastOperations().sendEvent("stt:summary", summary);
+    }
+
+    // =========================================================================
+    // --- [추가] 수업 종료 시: 전체 요약 생성 (Controller에서 호출) ---
+    // =========================================================================
+
+    @Async
+    @Transactional
+    public void generateFinalSummary(Long contentId) {
+        log.info("강의 ID [{}] 의 최종 요약본 생성을 시작합니다.", contentId);
+
+        List<Summary> minuteSummaries = summaryRepository
+                .findAllByContentIdAndSummaryTypeOrderByCreatedAtAsc(contentId, SummaryType.MINUTE);
+
+        if (minuteSummaries.isEmpty()) {
+            log.warn("강의 ID [{}] 에 대한 1분 단위 요약 데이터가 없습니다.", contentId);
+            return; // 요약할 데이터가 없으면 종료
+        }
+
+        String aggregatedText = minuteSummaries.stream()
+                .map(Summary::getSummaryText)
+                .collect(Collectors.joining("\n"));
+
+        String prompt = "다음은 수업 내용을 1분 단위로 요약한 텍스트입니다. 전체 흐름을 파악하여 서론, 본론, 결론이 있는 완성된 형태의 전체 강의 요약본을 작성해주세요:\n\n" + aggregatedText;
+
+        WebClient webClient = WebClient.builder().build();
+        GeminiDTO.Request requestBody = new GeminiDTO.Request(
+                List.of(new GeminiDTO.Content(List.of(new GeminiDTO.Part(prompt))))
+        );
+
+        try {
+            GeminiDTO.Response response = webClient.post()
+                    .uri(geminiApiUrl)
+                    .header("x-goog-api-key", geminiApiKey)
+                    .header("Content-Type", "application/json")
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(GeminiDTO.Response.class)
+                    .block();
+
+            if (response != null && response.getCandidates() != null && !response.getCandidates().isEmpty()) {
+                String finalSummaryText = response.getCandidates().get(0).getContent().getParts().get(0).getText();
+
+                saveSummaryToDb(contentId, finalSummaryText, Summary.SummaryType.FINAL);
+                log.info("강의 ID [{}] 의 최종 요약본 생성이 완료되었습니다.", contentId);
+
+                socketIOServer.getBroadcastOperations().sendEvent("stt:finalSummaryDone", contentId);
+            }
+        } catch (Exception e) {
+            log.error("[Gemini 최종 요약 API 오류] 강의 ID [{}]: {}", contentId, e.getMessage());
+        }
     }
 }
