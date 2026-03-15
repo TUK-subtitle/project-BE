@@ -2,38 +2,44 @@ package com.speakview.speakview.domain.ai.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.util.List;
 
 public class GeminiDTO {
 
-    @Getter
+    // 🔥 @Data와 @NoArgsConstructor를 추가하여 완벽한 JSON 직렬화/역직렬화를 보장합니다.
+    @Data
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class Request {
         private List<Content> contents;
     }
 
-    @Getter
+    @Data
     @AllArgsConstructor
     @NoArgsConstructor
     public static class Content {
         private List<Part> parts;
     }
 
-    @Getter
+    @Data
     @AllArgsConstructor
     @NoArgsConstructor
     public static class Part {
         private String text;
     }
 
-    @Getter
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Response {
         private List<Candidate> candidates;
 
-        @Getter
+        @Data
+        @AllArgsConstructor
+        @NoArgsConstructor
         @JsonIgnoreProperties(ignoreUnknown = true)
         public static class Candidate {
             private Content content;
