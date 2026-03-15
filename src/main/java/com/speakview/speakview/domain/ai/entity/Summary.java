@@ -7,16 +7,18 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
-        name = "Summarry",
+        name = "Summary",
         indexes = {
-                @Index(name="idx_summary_user", columnList="userId")
+                @Index(name="idx_summary_user", columnList="userId"),
+                @Index(name="idx_summary_content", columnList="contentId")
         }
 )
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 public class Summary {
@@ -30,10 +32,23 @@ public class Summary {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "contentId", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Content content;
+
     @Lob
     @Column(nullable = false)
-    private String content;
+    private String summaryText;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private SummaryType summaryType;
 
     @Column(nullable = false)
-    private LocalDate date;
+    private LocalDateTime createdAt;
+
+    public enum SummaryType {
+        MINUTE, FINAL
+    }
 }
