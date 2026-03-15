@@ -1,12 +1,12 @@
 package com.speakview.speakview.domain.ai.entity;
 
+import com.speakview.speakview.domain.ai.enums.SummaryType;
 import com.speakview.speakview.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -37,8 +37,7 @@ public class Summary {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Content content;
 
-    @Lob
-    @Column(nullable = false)
+    @Column(columnDefinition = "TEXT")
     private String summaryText;
 
     @Enumerated(EnumType.STRING)
@@ -47,8 +46,4 @@ public class Summary {
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
-
-    public enum SummaryType {
-        MINUTE, FINAL
-    }
 }

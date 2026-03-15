@@ -49,6 +49,11 @@ public class RealtimeSummaryService {
 
     private final Map<Long, List<String>> textBufferMap = new ConcurrentHashMap<>();
 
+    public void addSentenceToBuffer(String sentence) {
+        Long defaultContentId = 1L;
+        addSentenceToBuffer(defaultContentId, sentence);
+    }
+
     public void addSentenceToBuffer(Long contentId, String sentence) {
         textBufferMap.computeIfAbsent(contentId, k -> Collections.synchronizedList(new ArrayList<>())).add(sentence);
     }
@@ -103,7 +108,7 @@ public class RealtimeSummaryService {
                     if (response != null && response.getCandidates() != null && !response.getCandidates().isEmpty()) {
                         String summaryResult = response.getCandidates().get(0).getContent().getParts().get(0).getText();
 
-                        saveSummaryToDb(contentId, summaryResult, Summary.SummaryType.MINUTE);
+                        saveSummaryToDb(contentId, summaryResult, SummaryType.MINUTE);
 
                         broadcastSummary(summaryResult);
                     }
@@ -111,7 +116,7 @@ public class RealtimeSummaryService {
     }
 
     @Transactional
-    public void saveSummaryToDb(Long contentId, String summaryText, Summary.SummaryType type) {
+    public void saveSummaryToDb(Long contentId, String summaryText, SummaryType type) {
         Content content = contentRepository.findById(contentId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 강의를 찾을 수 없습니다. ID: " + contentId));
 
@@ -133,10 +138,6 @@ public class RealtimeSummaryService {
         log.info("[Gemini 1분 요약 브로드캐스트] -> {}", summary);
         socketIOServer.getBroadcastOperations().sendEvent("stt:summary", summary);
     }
-
-    // =========================================================================
-    // --- [추가] 수업 종료 시: 전체 요약 생성 (Controller에서 호출) ---
-    // =========================================================================
 
     @Async
     @Transactional
@@ -175,7 +176,7 @@ public class RealtimeSummaryService {
             if (response != null && response.getCandidates() != null && !response.getCandidates().isEmpty()) {
                 String finalSummaryText = response.getCandidates().get(0).getContent().getParts().get(0).getText();
 
-                saveSummaryToDb(contentId, finalSummaryText, Summary.SummaryType.FINAL);
+                saveSummaryToDb(contentId, finalSummaryText, SummaryType.FINAL);
                 log.info("강의 ID [{}] 의 최종 요약본 생성이 완료되었습니다.", contentId);
 
                 socketIOServer.getBroadcastOperations().sendEvent("stt:finalSummaryDone", contentId);
@@ -183,5 +184,12 @@ public class RealtimeSummaryService {
         } catch (Exception e) {
             log.error("[Gemini 최종 요약 API 오류] 강의 ID [{}]: {}", contentId, e.getMessage());
         }
+    }
+
+    @Transactional(readOnly = true)
+    public String getFinalSummary(Long contentId) {
+        return summaryRepository.findFirstByContentIdAndSummaryTypeOrderByCreatedAtDesc(contentId, SummaryType.FINAL)
+                .map(Summary::getSummaryText)
+                .orElse("아직 최종 요약본이 생성되지 않았거나 해당 강의를 찾을 수 없습니다.");
     }
 }

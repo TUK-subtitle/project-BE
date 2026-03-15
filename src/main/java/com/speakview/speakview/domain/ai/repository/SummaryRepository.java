@@ -4,7 +4,9 @@ import com.speakview.speakview.domain.ai.entity.Summary;
 import com.speakview.speakview.domain.ai.enums.SummaryType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
+import java.util.Optional;
 
 public interface SummaryRepository extends JpaRepository<Summary, Long> {
     List<Summary> findAllByContentIdAndSummaryTypeOrderByCreatedAtAsc(Long contentId, SummaryType summaryType);
+    Optional<Summary> findFirstByContentIdAndSummaryTypeOrderByCreatedAtDesc(Long contentId, SummaryType summaryType);
 }
