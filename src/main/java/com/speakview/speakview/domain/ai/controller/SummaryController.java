@@ -15,6 +15,9 @@ public class SummaryController {
 
     private final RealtimeSummaryService realtimeSummaryService;
 
+    /**
+     * 강의 종료 및 최종 요약 생성 요청
+     */
     @PostMapping("/end/{contentId}")
     @Operation(
             summary = "강의 종료 및 최종 요약 생성 요청 API",
@@ -27,6 +30,9 @@ public class SummaryController {
         return ApiResponse.success("강의가 종료되었습니다. 최종 요약본 생성을 백그라운드에서 시작합니다.", null);
     }
 
+    /**
+     * 특정 강의의 요약본 결과 조회
+     */
     @GetMapping("/{contentId}")
     @Operation(
             summary = "특정 강의의 최종 요약본 조회 API",
