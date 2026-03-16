@@ -130,7 +130,6 @@ public class RealtimeSttService {
                     int speaker = token.path("speaker").asInt(0);
                     boolean isFinal = token.path("is_final").asBoolean(false);
 
-                    // final 토큰만 사용
                     if (!isFinal) continue;
                     if (text.equals("<end>")) continue;
 
@@ -138,13 +137,11 @@ public class RealtimeSttService {
                     if (text.equals(lastSentToken)) continue;
                     lastSentToken = text;
 
-                    String toSend = "";
-
                     ObjectNode response = objectMapper.createObjectNode();
                     response.put("text", text);
 
                     if (speaker != lastSpeaker) {
-                        toSend = "[speaker:" + speaker + "] " + text;
+                        response.put("speaker", speaker);
                         lastSpeaker = speaker;
                     }
 
@@ -152,7 +149,7 @@ public class RealtimeSttService {
                         System.out.println("[token] -> " + response);
                     }
 
-                    subtitleService.broadcastSubtitle(toSend);
+                    subtitleService.broadcastSubtitle(response);
                 }
             }
         } catch (Exception e) {
