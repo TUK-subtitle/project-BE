@@ -48,6 +48,7 @@ public class RealtimeSummaryService {
     private String geminiApiUrl;
 
     private final Map<Long, List<String>> textBufferMap = new ConcurrentHashMap<>();
+    private final Map<Long, Long> timerMap = new ConcurrentHashMap<>();
 
     public void addSentenceToBuffer(String sentence) {
         Long defaultContentId = 1L;
@@ -55,39 +56,51 @@ public class RealtimeSummaryService {
     }
 
     public void addSentenceToBuffer(Long contentId, String sentence) {
+        // 버퍼에 텍스트 추가
         textBufferMap.computeIfAbsent(contentId, k -> Collections.synchronizedList(new ArrayList<>())).add(sentence);
+
+        // 이 강의의 첫 음성이 들어온 시간(시작 시간)을 기록
+        timerMap.putIfAbsent(contentId, System.currentTimeMillis());
+
+        // 현재 시간과 시작 시간을 비교하여 경과 시간 계산
+        long elapsedTime = System.currentTimeMillis() - timerMap.get(contentId);
+
+        // 만약 60초(60000ms) 이상이 경과했다면 요약 실행!
+        if (elapsedTime >= 60000) {
+            processSummaryForContent(contentId);
+        }
     }
 
-    @Scheduled(fixedRate = 60000)
-    public void processSummaryEveryMinute() {
-        if (textBufferMap.isEmpty()) return;
+    private void processSummaryForContent(Long contentId) {
+        List<String> buffer = textBufferMap.get(contentId);
 
-        // 버퍼에 쌓인 모든 강의(contentId)에 대해 1분 요약 진행
-        for (Map.Entry<Long, List<String>> entry : textBufferMap.entrySet()) {
-            Long contentId = entry.getKey();
-            List<String> buffer = entry.getValue();
+        if (buffer == null || buffer.isEmpty()) return;
 
-            if (buffer.isEmpty()) continue;
-
-            List<String> sentencesToSummarize;
-            synchronized (buffer) {
-                sentencesToSummarize = new ArrayList<>(buffer);
-                buffer.clear(); // 복사 후 비우기
-            }
-
-            String textToSummarize = String.join(" ", sentencesToSummarize);
-            log.info("[1분 경과] 강의 ID [{}] 요약 요청 텍스트: {}", contentId, textToSummarize);
-
-            requestSummaryToGemini(contentId, textToSummarize);
+        List<String> sentencesToSummarize;
+        synchronized (buffer) {
+            sentencesToSummarize = new ArrayList<>(buffer);
+            buffer.clear(); // 버퍼 비우기
         }
+
+        // 다음 1분을 위해 타이머 초기화
+        timerMap.put(contentId, System.currentTimeMillis());
+
+        String textToSummarize = String.join(" ", sentencesToSummarize);
+        log.info("[1분 경과] 강의 ID [{}] 요약 요청 (텍스트 길이: {})", contentId, textToSummarize.length());
+
+        // Gemini API 호출
+        requestSummaryToGemini(contentId, textToSummarize);
     }
 
     private void requestSummaryToGemini(Long contentId, String text) {
         WebClient webClient = WebClient.builder().build();
 
-        String prompt = "너는 실시간 회의/강의 내용을 요약하는 어시스턴트야. " +
-                "입력되는 텍스트는 음성 인식(STT) 결과라 오타나 문맥이 끊기는 부분이 있을 수 있어. " +
-                "최근 1분 동안 진행된 내용이니, 핵심만 파악해서 자연스럽게 요약해줘.\n\n[요약할 텍스트]\n" + text;
+        String prompt = "너는 청각장애 학생을 위해 실시간 강의를 요약하는 전문 AI 조수야. " +
+                "입력되는 STT 텍스트에서 불필요한 서론이나 강사의 추임새는 모두 제거하고, 화자가 전달하려는 '핵심 개념'과 '결론'만 추출해서 1~3문장의 명확한 문어체(-합니다, -입니다)로 요약해.\n\n" +
+                "⚠️[절대 지켜야 할 규칙]⚠️\n" +
+                "1. '네, 요약해 드리겠습니다', '**요약:**' 같은 인사말이나 마크다운 기호, 부연 설명은 절대 출력하지 마.\n" +
+                "2. 오직 요약된 순수 텍스트 결과만 바로 출력해.\n\n" +
+                "[요약할 텍스트]\n" + text;
 
         GeminiDTO.Request requestBody = new GeminiDTO.Request(
                 List.of(new GeminiDTO.Content(List.of(new GeminiDTO.Part(prompt))))
