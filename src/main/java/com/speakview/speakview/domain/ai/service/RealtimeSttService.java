@@ -117,7 +117,6 @@ public class RealtimeSttService {
     /**
      * Soniox 메시지 처리
      */
-    private int lastSpeaker = -1;
     private String lastSentToken = "";
 
     private void handleSonioxMessage(String json) {
@@ -140,10 +139,7 @@ public class RealtimeSttService {
                     ObjectNode response = objectMapper.createObjectNode();
                     response.put("text", text);
 
-                    if (speaker != lastSpeaker) {
-                        response.put("speaker", speaker);
-                        lastSpeaker = speaker;
-                    }
+                    response.put("speaker", speaker);
 
                     if (!socketIOServer.getAllClients().isEmpty()) {
                         System.out.println("[token] -> " + response);
