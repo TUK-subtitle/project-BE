@@ -118,47 +118,41 @@ public class RealtimeSttService {
      * Soniox 메시지 처리
      */
     private int lastSpeaker = -1;
+    private String lastSentToken = "";
 
     private void handleSonioxMessage(String json) {
         try {
             JsonNode node = objectMapper.readTree(json);
 
             if (node.has("tokens")) {
-                StringBuilder sb = new StringBuilder();
-                boolean hasFinal = false;
-                int currentSpeaker = lastSpeaker;
-
                 for (JsonNode token : node.path("tokens")) {
                     String text = token.path("text").asText("");
                     int speaker = token.path("speaker").asInt(0);
+                    boolean isFinal = token.path("is_final").asBoolean(false);
 
-                    sb.append(text);
-                    if (token.path("is_final").asBoolean(false)) {
-                        hasFinal = true;
-                    }
+                    // final 토큰만 사용
+                    if (!isFinal) continue;
+                    if (text.equals("<end>")) continue;
+
+                    // 중복 방지
+                    if (text.equals(lastSentToken)) continue;
+                    lastSentToken = text;
+
+                    String toSend = "";
+
+                    ObjectNode response = objectMapper.createObjectNode();
+                    response.put("text", text);
 
                     if (speaker != lastSpeaker) {
-                        currentSpeaker = speaker;
+                        toSend = "[speaker:" + speaker + "] " + text;
                         lastSpeaker = speaker;
-                    }
-                }
-
-                String subtitle = sb.toString().trim();
-                if (!subtitle.isEmpty()) {
-
-                    // 전송할 JSON 객체 생성
-                    ObjectNode response = objectMapper.createObjectNode();
-                    response.put("text", subtitle);
-                    // speaker 정보 - 변경 시에만 포함
-                    if (currentSpeaker != -1) {
-                        response.put("speaker", currentSpeaker);
                     }
 
                     if (!socketIOServer.getAllClients().isEmpty()) {
-                        System.out.println("[받아쓰는 중 ...] -> " + subtitle);
+                        System.out.println("[token] -> " + response);
                     }
 
-                    subtitleService.broadcastSubtitle(response.toString(), hasFinal);
+                    subtitleService.broadcastSubtitle(toSend);
                 }
             }
         } catch (Exception e) {
