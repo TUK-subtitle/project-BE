@@ -3,6 +3,7 @@ package com.speakview.speakview.domain.ai.service;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -116,40 +117,50 @@ public class RealtimeSttService {
     /**
      * Soniox 메시지 처리
      */
+    private int lastSpeaker = -1;
+
     private void handleSonioxMessage(String json) {
         try {
             JsonNode node = objectMapper.readTree(json);
 
             if (node.has("tokens")) {
-                int lastSpeaker = -1;
                 StringBuilder sb = new StringBuilder();
                 boolean hasFinal = false;
+                int currentSpeaker = lastSpeaker;
 
                 for (JsonNode token : node.path("tokens")) {
                     String text = token.path("text").asText("");
                     int speaker = token.path("speaker").asInt(0);
 
-                    if (speaker != lastSpeaker) {
-                        sb.append("\nSpeaker ").append(speaker).append(": ");
-                        lastSpeaker = speaker;
-                    }
-
                     sb.append(text);
                     if (token.path("is_final").asBoolean(false)) {
                         hasFinal = true;
                     }
+
+                    if (speaker != lastSpeaker) {
+                        currentSpeaker = speaker;
+                        lastSpeaker = speaker;
+                    }
                 }
 
-                String subtitle = sb.toString();
+                String subtitle = sb.toString().trim();
                 if (!subtitle.isEmpty()) {
-                    // 클라이언트가 하나 이상 연결되어 있을 때만 로그 출력
+
+                    // 전송할 JSON 객체 생성
+                    ObjectNode response = objectMapper.createObjectNode();
+                    response.put("text", subtitle);
+                    // speaker 정보 - 변경 시에만 포함
+                    if (currentSpeaker != -1) {
+                        response.put("speaker", currentSpeaker);
+                    }
+
                     if (!socketIOServer.getAllClients().isEmpty()) {
                         System.out.println("[받아쓰는 중 ...] -> " + subtitle);
                     }
-                    subtitleService.broadcastSubtitle(subtitle, hasFinal);
+
+                    subtitleService.broadcastSubtitle(response.toString(), hasFinal);
                 }
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
