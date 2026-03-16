@@ -5,6 +5,8 @@ import com.speakview.speakview.domain.ai.repository.ContentRepository;
 
 import com.speakview.speakview.domain.user.entity.Subject;
 import com.speakview.speakview.domain.user.entity.User;
+import com.speakview.speakview.domain.user.repository.SubjectRepository;
+import com.speakview.speakview.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +34,7 @@ public class ContentService {
         Content newContent = Content.builder()
                 .user(user)
                 .subject(subject)
-                .createAt(LocalDate.now()) // DB 컬럼 타입(Date/Timestamp)에 맞춰 조정
+                .createAt(LocalDate.now())
                 .build();
 
         // DB에 저장 후 자동 생성된 ID 반환
