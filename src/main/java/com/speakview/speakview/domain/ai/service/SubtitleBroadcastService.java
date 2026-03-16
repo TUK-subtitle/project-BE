@@ -1,6 +1,7 @@
 package com.speakview.speakview.domain.ai.service;
 
 import com.corundumstudio.socketio.SocketIOServer;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -11,13 +12,13 @@ public class SubtitleBroadcastService {
     private final SocketIOServer socketIOServer;
     private final RealtimeSummaryService realtimeSummaryService;
 
-    public void broadcastSubtitle(String subtitle) {
+    public void broadcastSubtitle(JsonNode subtitle) {
         socketIOServer.getBroadcastOperations()
                 .sendEvent("stt:subtitle_final", subtitle);
 
         System.out.println("[최종 token] -> " + subtitle);
 
         // 요약 버퍼
-        realtimeSummaryService.addSentenceToBuffer(subtitle);
+        realtimeSummaryService.addSentenceToBuffer(subtitle.path("text").asText());
     }
 }
