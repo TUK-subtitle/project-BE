@@ -34,7 +34,6 @@ public class ContentService {
         Content newContent = Content.builder()
                 .user(user)
                 .subject(subject)
-                .createAt(LocalDate.now())
                 .build();
 
         // DB에 저장 후 자동 생성된 ID 반환

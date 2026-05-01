@@ -13,5 +13,5 @@ public class MemoCreateRequest {
     private String memoText;
 
     @NotNull(message = "timestamp 값이 필요합니다.")
-    private Integer timestamp;
+    private String timestamp;
 }
