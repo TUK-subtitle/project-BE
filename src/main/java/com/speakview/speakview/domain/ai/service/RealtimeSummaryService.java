@@ -138,9 +138,8 @@ public class RealtimeSummaryService {
         Summary summary = Summary.builder()
                 .user(user)
                 .content(content)
-                .summaryText(summaryText)
-                .summaryType(type)
-                .createdAt(LocalDateTime.now())
+                .text(summaryText)
+                .type(type)
                 .build();
 
         summaryRepository.save(summary);
@@ -166,7 +165,7 @@ public class RealtimeSummaryService {
         }
 
         String aggregatedText = minuteSummaries.stream()
-                .map(Summary::getSummaryText)
+                .map(Summary::getText)
                 .collect(Collectors.joining("\n"));
 
         String prompt = "다음은 수업 내용을 1분 단위로 요약한 텍스트입니다. 전체 흐름을 파악하여 서론, 본론, 결론이 있는 완성된 형태의 전체 강의 요약본을 작성해주세요:\n\n" + aggregatedText;
@@ -202,7 +201,7 @@ public class RealtimeSummaryService {
     @Transactional(readOnly = true)
     public String getFinalSummary(Long contentId) {
         return summaryRepository.findFirstByContentIdAndSummaryTypeOrderByCreatedAtDesc(contentId, SummaryType.FINAL)
-                .map(Summary::getSummaryText)
+                .map(Summary::getText)
                 .orElse("아직 최종 요약본이 생성되지 않았거나 해당 강의를 찾을 수 없습니다.");
     }
 }

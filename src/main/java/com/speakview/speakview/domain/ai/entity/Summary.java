@@ -2,26 +2,25 @@ package com.speakview.speakview.domain.ai.entity;
 
 import com.speakview.speakview.domain.ai.enums.SummaryType;
 import com.speakview.speakview.domain.user.entity.User;
+import com.speakview.speakview.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(
         name = "Summary",
         indexes = {
-                @Index(name="idx_summary_user", columnList="userId"),
-                @Index(name="idx_summary_content", columnList="contentId")
+                @Index(name="idx_summary_user", columnList="user_id"),
+                @Index(name="idx_summary_content", columnList="content_id")
         }
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class Summary {
+public class Summary extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,8 +38,8 @@ public class Summary {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
-    private SummaryType summaryType;
+    private SummaryType type;
 
     @Column(name = "text", columnDefinition = "TEXT")
-    private String summaryText;
+    private String text;
 }
