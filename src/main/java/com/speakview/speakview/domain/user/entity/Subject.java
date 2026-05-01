@@ -16,7 +16,7 @@ import java.util.List;
 @Table(
         name = "Subject",
         indexes = {
-                @Index(name = "idx_subject_timetable", columnList = "timeTable_id")
+                @Index(name = "idx_subject_timetable", columnList = "timetable_id")
         }
 )
 @Getter
