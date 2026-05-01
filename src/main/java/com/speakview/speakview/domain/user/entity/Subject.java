@@ -16,7 +16,7 @@ import java.util.List;
 @Table(
         name = "Subject",
         indexes = {
-                @Index(name = "idx_subject_timetable", columnList = "timeTableId")
+                @Index(name = "idx_subject_timetable", columnList = "timeTable_id")
         }
 )
 @Getter
@@ -46,6 +46,7 @@ public class Subject extends BaseEntity {
     @Column(name = "end_time")
     private LocalTime endTime;
 
+    @Builder.Default
     @OneToMany(mappedBy = "subject", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Content> contents = new ArrayList<>();
 }
