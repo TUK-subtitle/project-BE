@@ -11,7 +11,7 @@ public class MemoResponse {
     private Long id;
     private Long contentId;
     private String memoText;
-    private Integer timestamp;
+    private String timestamp;
 
     public static MemoResponse from(Memo memo) {
         return MemoResponse.builder()
