@@ -11,7 +11,7 @@ import org.hibernate.annotations.OnDeleteAction;
 @Table(
         name = "Memo",
         indexes = {
-                @Index(name="idx_memo_content", columnList="contentId")
+                @Index(name="idx_memo_content", columnList="content_id")
         }
 )
 @Getter
