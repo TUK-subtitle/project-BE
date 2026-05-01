@@ -5,12 +5,11 @@ import com.speakview.speakview.domain.ai.entity.Summary;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "Users")
+@Table(name = "User")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,17 +20,17 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String kakaoId;
+    @Column(name = "login_id", nullable = false)
+    private String loginId;
 
-    @Column(nullable = false)
-    private String nickname;
+    @Column(name = "password", nullable = false)
+    private String password;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDate createAt;
+    @Column(name = "name", nullable = false)
+    private String name;
 
-    @Column(nullable = false)
-    private LocalDate updateAt;
+    @Column(name = "phone_number", nullable = false)
+    private String phoneNumber;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TimeTable> timetables = new ArrayList<>();
