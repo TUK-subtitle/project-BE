@@ -157,7 +157,7 @@ public class RealtimeSummaryService {
         log.info("강의 ID [{}] 의 최종 요약본 생성을 시작합니다.", contentId);
 
         List<Summary> minuteSummaries = summaryRepository
-                .findAllByContentIdAndSummaryTypeOrderByCreatedAtAsc(contentId, SummaryType.MINUTE);
+                .findAllByContentIdAndTypeOrderByCreatedAtAsc(contentId, SummaryType.MINUTE);
 
         if (minuteSummaries.isEmpty()) {
             log.warn("강의 ID [{}] 에 대한 1분 단위 요약 데이터가 없습니다.", contentId);
@@ -200,7 +200,7 @@ public class RealtimeSummaryService {
 
     @Transactional(readOnly = true)
     public String getFinalSummary(Long contentId) {
-        return summaryRepository.findFirstByContentIdAndSummaryTypeOrderByCreatedAtDesc(contentId, SummaryType.FINAL)
+        return summaryRepository.findFirstByContentIdAndTypeOrderByCreatedAtDesc(contentId, SummaryType.FINAL)
                 .map(Summary::getText)
                 .orElse("아직 최종 요약본이 생성되지 않았거나 해당 강의를 찾을 수 없습니다.");
     }

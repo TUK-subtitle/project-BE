@@ -17,8 +17,8 @@ import java.util.List;
 @Table(
         name = "Content",
         indexes = {
-                @Index(name="idx_content_user", columnList="userId"),
-                @Index(name="idx_content_subject", columnList="subjectId")
+                @Index(name="idx_content_user", columnList="user_id"),
+                @Index(name="idx_content_subject", columnList="subject_id")
         }
 )
 @Getter

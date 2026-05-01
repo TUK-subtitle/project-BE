@@ -7,6 +7,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SummaryRepository extends JpaRepository<Summary, Long> {
-    List<Summary> findAllByContentIdAndSummaryTypeOrderByCreatedAtAsc(Long contentId, SummaryType summaryType);
-    Optional<Summary> findFirstByContentIdAndSummaryTypeOrderByCreatedAtDesc(Long contentId, SummaryType summaryType);
+    List<Summary> findAllByContentIdAndTypeOrderByCreatedAtAsc(Long contentId, SummaryType summaryType);
+    Optional<Summary> findFirstByContentIdAndTypeOrderByCreatedAtDesc(Long contentId, SummaryType summaryType);
 }
