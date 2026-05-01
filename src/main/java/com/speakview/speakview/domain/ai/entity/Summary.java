@@ -28,22 +28,19 @@ public class Summary {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "contentId", nullable = false)
+    @JoinColumn(name = "content_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Content content;
 
-    @Column(columnDefinition = "TEXT")
-    private String summaryText;
-
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "type", nullable = false)
     private SummaryType summaryType;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "text", columnDefinition = "TEXT")
+    private String summaryText;
 }
