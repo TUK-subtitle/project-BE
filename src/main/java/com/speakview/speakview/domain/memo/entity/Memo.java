@@ -1,6 +1,7 @@
 package com.speakview.speakview.domain.memo.entity;
 
 import com.speakview.speakview.domain.ai.entity.Content;
+import com.speakview.speakview.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;
@@ -17,21 +18,21 @@ import org.hibernate.annotations.OnDeleteAction;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Memo {
+public class Memo extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "contentId", nullable = false)
+    @JoinColumn(name = "content_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Content content;
 
     @Lob
-    @Column(nullable = false)
+    @Column(name = "memo_text", nullable = false)
     private String memoText;
 
     @Column(nullable = false, length = 20)
-    private Integer timestamp;
+    private String timestamp;
 }

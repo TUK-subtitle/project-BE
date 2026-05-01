@@ -3,6 +3,7 @@ package com.speakview.speakview.domain.ai.entity;
 import com.speakview.speakview.domain.memo.entity.Memo;
 import com.speakview.speakview.domain.user.entity.Subject;
 import com.speakview.speakview.domain.user.entity.User;
+import com.speakview.speakview.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;
@@ -24,7 +25,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Content {
+public class Content extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
