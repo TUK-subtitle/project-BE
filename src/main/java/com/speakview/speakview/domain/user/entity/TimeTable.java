@@ -13,7 +13,7 @@ import java.util.List;
 @Table(
         name = "Timetable",
         indexes = {
-                @Index(name = "idx_timetable_user", columnList = "userId")
+                @Index(name = "idx_timetable_user", columnList = "user_id")
         }
 )
 @Getter
@@ -37,6 +37,7 @@ public class TimeTable extends BaseEntity {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Builder.Default
     @OneToMany(mappedBy = "timetable", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Subject> subjects = new ArrayList<>();
 }
