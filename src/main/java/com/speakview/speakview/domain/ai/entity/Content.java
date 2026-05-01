@@ -31,19 +31,17 @@ public class Content {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subjectId", nullable = false)
+    @JoinColumn(name = "subject_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Subject subject;
 
-    @Column(nullable = false)
-    private LocalDate createAt;
-
-    private LocalDate deleteAt;
+    @Column(name = "title")
+    private String title;
 
     @OneToMany(mappedBy = "content", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Memo> memos = new ArrayList<>();
