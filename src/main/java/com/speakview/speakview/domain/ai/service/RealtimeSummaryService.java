@@ -154,6 +154,11 @@ public class RealtimeSummaryService {
     @Async
     @Transactional
     public void generateFinalSummary(Long contentId) {
+        if(summaryRepository.existsByContentIdAndType(contentId, SummaryType.FINAL)) {
+            log.info("이미 FINAL 요약이 존재합니다. contentId={}", contentId);
+            return;
+        }
+
         log.info("강의 ID [{}] 의 최종 요약본 생성을 시작합니다.", contentId);
 
         List<Summary> minuteSummaries = summaryRepository
