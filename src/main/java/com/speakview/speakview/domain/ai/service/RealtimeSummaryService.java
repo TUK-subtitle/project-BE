@@ -5,6 +5,7 @@ import com.speakview.speakview.domain.ai.dto.GeminiDTO;
 import com.speakview.speakview.domain.ai.entity.Content;
 import com.speakview.speakview.domain.ai.entity.Summary;
 import com.speakview.speakview.domain.ai.enums.SummaryType;
+import com.speakview.speakview.domain.ai.event.LectureEndedEvent;
 import com.speakview.speakview.domain.ai.repository.ContentRepository;
 import com.speakview.speakview.domain.ai.repository.SummaryRepository;
 import com.speakview.speakview.domain.user.entity.User;
