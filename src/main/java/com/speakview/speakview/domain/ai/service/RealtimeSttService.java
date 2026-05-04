@@ -56,41 +56,34 @@ public class RealtimeSttService {
     public void initSocketListeners() {
         // 클라이언트 연결
         socketIOServer.addConnectListener(client -> {
+            System.out.println("[클라이언트] 연결 성공: " + client.getSessionId());
+            if (session == null || !session.isOpen()) {
+                initConnection();
+            }
+        });
+
+        socketIOServer.addEventListener("stt:join", Long.class, (client, contentId, ackSender) -> {
             String sid = client.getSessionId().toString();
-            System.out.println("[클라이언트] 연결 해제: " + sid);
-
-            // 세션 맵에서 제거 및 contentId 확인
-            Long contentId = sessionContentMap.remove(sid);
-
-            // 기존 Soniox 연결 종료 로직 유지
-            if (socketIOServer.getAllClients().isEmpty() && session != null && session.isOpen()) {
-                session.close().subscribe();
-                session = null;
-                System.out.println("[Soniox] 연결 종료");
-            }
-
-            // contentId 가 있었다면 같은 contentId 를 사용 중인 다른 세션이 남아있는지 확인
-            if (contentId != null) {
-                boolean stillPresent = sessionContentMap.values().stream().anyMatch(id -> id.equals(contentId));
-                if (!stillPresent) {
-                    // 더 이상 이 contentId에 연결된 세션이 없음 -> 강의 종료 이벤트 발행
-                    System.out.println("[Event] LectureEndedEvent 발행: contentId=" + contentId);
-                    applicationEventPublisher.publishEvent(new LectureEndedEvent(this, contentId));
-                } else {
-                    System.out.println("[Event] 동일 contentId 연결이 남아있어 종료 이벤트 발행 안함. contentId=" + contentId);
-                }
-            }
+            sessionContentMap.put(sid, contentId);
+            System.out.println("[stt:join] sid=" + sid + ", contentId=" + contentId);
         });
 
         // 클라이언트 연결 해제
         socketIOServer.addDisconnectListener(client -> {
-            System.out.println("[클라이언트] 연결 해제: " + client.getSessionId());
+            String sid = client.getSessionId().toString();
+            Long contentId = sessionContentMap.remove(sid);
 
-            // 모든 클라이언트가 끊기면 Soniox 연결 종료
             if (socketIOServer.getAllClients().isEmpty() && session != null && session.isOpen()) {
                 session.close().subscribe();
                 session = null;
                 System.out.println("[Soniox] 연결 종료");
+            }
+
+            if (contentId != null) {
+                boolean stillPresent = sessionContentMap.values().stream().anyMatch(id -> id.equals(contentId));
+                if (!stillPresent) {
+                    applicationEventPublisher.publishEvent(new LectureEndedEvent(this, contentId));
+                }
             }
         });
 
@@ -160,10 +153,16 @@ public class RealtimeSttService {
                     if (text.equals(lastSentToken)) continue;
                     lastSentToken = text;
 
+                    Long contentId = resolveCurrentContentId();
+                    if (contentId == null) {
+                        System.out.println("[경고] contentId 매핑이 없어 자막/요약 저장 스킵");
+                        continue;
+                    }
+
                     ObjectNode response = objectMapper.createObjectNode();
                     response.put("text", text);
-
                     response.put("speaker", speaker);
+                    response.put("contentId", contentId); // 핵심: contentId 포함
 
                     if (!socketIOServer.getAllClients().isEmpty()) {
                         System.out.println("[token] -> " + response);
@@ -206,5 +205,9 @@ public class RealtimeSttService {
         while (!audioQueue.isEmpty()) {
             sendNow(audioQueue.poll());
         }
+    }
+
+    private Long resolveCurrentContentId() {
+        return sessionContentMap.values().stream().findFirst().orElse(null);
     }
 }
