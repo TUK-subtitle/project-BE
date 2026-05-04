@@ -11,6 +11,7 @@ import com.speakview.speakview.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -208,5 +209,12 @@ public class RealtimeSummaryService {
         return summaryRepository.findFirstByContentIdAndTypeOrderByCreatedAtDesc(contentId, SummaryType.FINAL)
                 .map(Summary::getText)
                 .orElse("아직 최종 요약본이 생성되지 않았거나 해당 강의를 찾을 수 없습니다.");
+    }
+
+    @EventListener
+    public void onLectureEnded(LectureEndedEvent event) {
+        Long contentId = event.getContentId();
+        log.info("LectureEndedEvent 수신: contentId={}", contentId);
+        generateFinalSummary(contentId);
     }
 }
