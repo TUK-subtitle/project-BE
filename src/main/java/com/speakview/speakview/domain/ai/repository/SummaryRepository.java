@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface SummaryRepository extends JpaRepository<Summary, Long> {
     List<Summary> findAllByContentIdAndTypeOrderByCreatedAtAsc(Long contentId, SummaryType summaryType);
     Optional<Summary> findFirstByContentIdAndTypeOrderByCreatedAtDesc(Long contentId, SummaryType summaryType);
+    boolean existsByContentIdAndType(Long contentId, SummaryType type);
 }

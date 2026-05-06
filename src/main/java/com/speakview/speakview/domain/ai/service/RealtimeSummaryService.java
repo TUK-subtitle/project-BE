@@ -5,12 +5,14 @@ import com.speakview.speakview.domain.ai.dto.GeminiDTO;
 import com.speakview.speakview.domain.ai.entity.Content;
 import com.speakview.speakview.domain.ai.entity.Summary;
 import com.speakview.speakview.domain.ai.enums.SummaryType;
+import com.speakview.speakview.domain.ai.event.LectureEndedEvent;
 import com.speakview.speakview.domain.ai.repository.ContentRepository;
 import com.speakview.speakview.domain.ai.repository.SummaryRepository;
 import com.speakview.speakview.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -154,6 +156,11 @@ public class RealtimeSummaryService {
     @Async
     @Transactional
     public void generateFinalSummary(Long contentId) {
+        if(summaryRepository.existsByContentIdAndType(contentId, SummaryType.FINAL)) {
+            log.info("이미 FINAL 요약이 존재합니다. contentId={}", contentId);
+            return;
+        }
+
         log.info("강의 ID [{}] 의 최종 요약본 생성을 시작합니다.", contentId);
 
         List<Summary> minuteSummaries = summaryRepository
@@ -203,5 +210,12 @@ public class RealtimeSummaryService {
         return summaryRepository.findFirstByContentIdAndTypeOrderByCreatedAtDesc(contentId, SummaryType.FINAL)
                 .map(Summary::getText)
                 .orElse("아직 최종 요약본이 생성되지 않았거나 해당 강의를 찾을 수 없습니다.");
+    }
+
+    @EventListener
+    public void onLectureEnded(LectureEndedEvent event) {
+        Long contentId = event.getContentId();
+        log.info("LectureEndedEvent 수신: contentId={}", contentId);
+        generateFinalSummary(contentId);
     }
 }
