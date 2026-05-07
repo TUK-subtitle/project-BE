@@ -2,15 +2,22 @@ package com.speakview.speakview.domain.ai.service;
 
 import com.corundumstudio.socketio.SocketIOServer;
 import com.fasterxml.jackson.databind.JsonNode;
-import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class SubtitleBroadcastService {
 
     private final SocketIOServer socketIOServer;
     private final RealtimeSummaryService realtimeSummaryService;
+
+    public SubtitleBroadcastService(
+            SocketIOServer socketIOServer,
+            @Lazy RealtimeSummaryService realtimeSummaryService
+    ) {
+        this.socketIOServer = socketIOServer;
+        this.realtimeSummaryService = realtimeSummaryService;
+    }
 
     public void broadcastSubtitle(JsonNode subtitle) {
         socketIOServer.getBroadcastOperations()
