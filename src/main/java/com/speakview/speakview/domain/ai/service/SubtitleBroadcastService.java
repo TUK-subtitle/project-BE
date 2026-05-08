@@ -21,7 +21,7 @@ public class SubtitleBroadcastService {
 
     public void broadcastSubtitle(JsonNode subtitle) {
         socketIOServer.getBroadcastOperations()
-                .sendEvent("stt:subtitle_final", subtitle);
+                .sendEvent("stt:subtitle", subtitle);
 
         System.out.println("[최종 token] -> " + subtitle);
 
