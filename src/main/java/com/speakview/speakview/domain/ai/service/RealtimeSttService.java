@@ -62,8 +62,9 @@ public class RealtimeSttService {
             }
         });
 
-        socketIOServer.addEventListener("stt:join", Long.class, (client, contentId, ackSender) -> {
+        socketIOServer.addEventListener("stt:join", Map.class, (client, data, ackSender) -> {
             String sid = client.getSessionId().toString();
+            Long contentId = Long.valueOf(data.get("contentId").toString());
             sessionContentMap.put(sid, contentId);
             System.out.println("[stt:join] sid=" + sid + ", contentId=" + contentId);
         });
