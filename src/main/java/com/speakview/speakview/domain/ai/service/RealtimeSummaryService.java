@@ -73,7 +73,7 @@ public class RealtimeSummaryService {
         }
     }
 
-    private void processSummaryForContent(Long contentId) {
+    public void processSummaryForContent(Long contentId) {
         List<String> buffer = textBufferMap.get(contentId);
 
         if (buffer == null || buffer.isEmpty()) return;
@@ -125,7 +125,7 @@ public class RealtimeSummaryService {
 
                         saveSummaryToDb(contentId, summaryResult, SummaryType.MINUTE);
 
-                        broadcastSummary(summaryResult);
+                        broadcastSummary(contentId, summaryResult);
                     }
                 });
     }
@@ -148,9 +148,10 @@ public class RealtimeSummaryService {
         log.info("[DB 저장 완료] 강의 ID [{}], 타입 [{}]", contentId, type);
     }
 
-    private void broadcastSummary(String summary) {
-        log.info("[Gemini 1분 요약 브로드캐스트] -> {}", summary);
-        socketIOServer.getBroadcastOperations().sendEvent("stt:summary", summary);
+    private void broadcastSummary(Long contentId, String summary) {
+        String room = "content:" + contentId;
+        log.info("[Gemini 1분 요약 room 전송] room={}, summary={}", room, summary);
+        socketIOServer.getRoomOperations(room).sendEvent("stt:summary", summary);
     }
 
     @Async
@@ -198,7 +199,8 @@ public class RealtimeSummaryService {
                 saveSummaryToDb(contentId, finalSummaryText, SummaryType.FINAL);
                 log.info("강의 ID [{}] 의 최종 요약본 생성이 완료되었습니다.", contentId);
 
-                socketIOServer.getBroadcastOperations().sendEvent("stt:finalSummaryDone", contentId);
+                String room = "content:" + contentId;
+                socketIOServer.getRoomOperations(room).sendEvent("stt:finalSummaryDone", contentId);
             }
         } catch (Exception e) {
             log.error("[Gemini 최종 요약 API 오류] 강의 ID [{}]: {}", contentId, e.getMessage());
@@ -216,6 +218,9 @@ public class RealtimeSummaryService {
     public void onLectureEnded(LectureEndedEvent event) {
         Long contentId = event.getContentId();
         log.info("LectureEndedEvent 수신: contentId={}", contentId);
+
+        processSummaryForContent(contentId);
+
         generateFinalSummary(contentId);
     }
 }

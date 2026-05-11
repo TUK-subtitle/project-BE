@@ -35,6 +35,7 @@ public class RealtimeSttService {
     private final SubtitleBroadcastService subtitleService;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final ConcurrentMap<String, Long> sessionContentMap = new ConcurrentHashMap<>();
+    private volatile Long currentAudioContentId;
 
     @Value("${soniox.api-key}")
     private String apiKey;
@@ -42,6 +43,10 @@ public class RealtimeSttService {
     private static final String SONIOX_WS_URL = "wss://stt-rt.soniox.com/transcribe-websocket";
     private WebSocketSession session;
     private final Queue<byte[]> audioQueue = new ConcurrentLinkedQueue<>();
+
+    private String roomName(Long contentId) {
+        return "content:" + contentId;
+    }
 
     /**
      * 최초 클라이언트 연결 시 Soniox WebSocket 연결
@@ -62,17 +67,35 @@ public class RealtimeSttService {
             }
         });
 
-        socketIOServer.addEventListener("stt:join", Map.class, (client, data, ackSender) -> {
-            String sid = client.getSessionId().toString();
-            Long contentId = Long.valueOf(data.get("contentId").toString());
-            sessionContentMap.put(sid, contentId);
-            System.out.println("[stt:join] sid=" + sid + ", contentId=" + contentId);
+        socketIOServer.addEventListener("stt:audio", String.class, (client, base64Data, ackSender) -> {
+            try {
+                String sid = client.getSessionId().toString();
+                Long contentId = sessionContentMap.get(sid);
+
+                if (contentId == null) {
+                    System.out.println("[경고] 오디오 수신했지만 contentId 매핑 없음 sid=" + sid);
+                    return;
+                }
+
+                // 이번 오디오 프레임의 contentId 표시
+                currentAudioContentId = contentId;
+
+                byte[] audioData = java.util.Base64.getDecoder().decode(base64Data);
+                System.out.println("[오디오] 수신, 길이: " + audioData.length + ", contentId=" + contentId);
+                sendAudioFrame(audioData);
+            } catch (IllegalArgumentException e) {
+                System.out.println("[경고] Base64 디코딩 실패: " + e.getMessage());
+            }
         });
 
         // 클라이언트 연결 해제
         socketIOServer.addDisconnectListener(client -> {
             String sid = client.getSessionId().toString();
             Long contentId = sessionContentMap.remove(sid);
+
+            if (contentId != null) {
+                client.leaveRoom(roomName(contentId));
+            }
 
             if (socketIOServer.getAllClients().isEmpty() && session != null && session.isOpen()) {
                 session.close().subscribe();
@@ -154,7 +177,7 @@ public class RealtimeSttService {
                     if (text.equals(lastSentToken)) continue;
                     lastSentToken = text;
 
-                    Long contentId = resolveCurrentContentId();
+                    Long contentId = currentAudioContentId;
                     if (contentId == null) {
                         System.out.println("[경고] contentId 매핑이 없어 자막/요약 저장 스킵");
                         continue;
@@ -206,9 +229,5 @@ public class RealtimeSttService {
         while (!audioQueue.isEmpty()) {
             sendNow(audioQueue.poll());
         }
-    }
-
-    private Long resolveCurrentContentId() {
-        return sessionContentMap.values().stream().findFirst().orElse(null);
     }
 }
