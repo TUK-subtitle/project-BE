@@ -20,20 +20,24 @@ public class SubtitleBroadcastService {
     }
 
     public void broadcastSubtitle(JsonNode subtitle) {
-        socketIOServer.getBroadcastOperations()
-                .sendEvent("stt:subtitle", subtitle);
-
-        System.out.println("[최종 token] -> " + subtitle);
-
         Long contentId = subtitle.path("contentId").asLong(-1);
         String text = subtitle.path("text").asText("");
+
+        if (contentId > 0) {
+            socketIOServer.getRoomOperations("content:" + contentId)
+                    .sendEvent("stt:subtitle", subtitle);
+        } else {
+            socketIOServer.getBroadcastOperations()
+                    .sendEvent("stt:subtitle", subtitle);
+        }
+
+        System.out.println("[최종 token] -> " + subtitle);
 
         if (contentId <= 0 || text.isBlank()) {
             System.out.println("[요약 버퍼 스킵] contentId/text 유효하지 않음");
             return;
         }
 
-        // contentId 기준으로 요약 버퍼 저장
         realtimeSummaryService.addSentenceToBuffer(contentId, text);
     }
 }

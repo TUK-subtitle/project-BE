@@ -67,6 +67,18 @@ public class RealtimeSttService {
             }
         });
 
+        // 방 입장
+        socketIOServer.addEventListener("stt:join", Map.class, (client, data, ackSender) -> {
+            String sid = client.getSessionId().toString();
+            Long contentId = Long.valueOf(data.get("contentId").toString());
+
+            sessionContentMap.put(sid, contentId);
+            client.joinRoom(roomName(contentId));
+
+            System.out.println("[join] sid=" + sid + " contentId=" + contentId);
+        });
+
+        // 오디오 수신
         socketIOServer.addEventListener("stt:audio", String.class, (client, base64Data, ackSender) -> {
             try {
                 String sid = client.getSessionId().toString();
@@ -77,7 +89,6 @@ public class RealtimeSttService {
                     return;
                 }
 
-                // 이번 오디오 프레임의 contentId 표시
                 currentAudioContentId = contentId;
 
                 byte[] audioData = java.util.Base64.getDecoder().decode(base64Data);
@@ -108,17 +119,6 @@ public class RealtimeSttService {
                 if (!stillPresent) {
                     applicationEventPublisher.publishEvent(new LectureEndedEvent(this, contentId));
                 }
-            }
-        });
-
-        // 오디오 데이터 수신 (Base64로 오는 경우)
-        socketIOServer.addEventListener("stt:audio", String.class, (client, base64Data, ackSender) -> {
-            try {
-                byte[] audioData = java.util.Base64.getDecoder().decode(base64Data);
-                System.out.println("[오디오] 수신, 길이: " + audioData.length);
-                sendAudioFrame(audioData);
-            } catch (IllegalArgumentException e) {
-                System.out.println("[경고] Base64 디코딩 실패: " + e.getMessage());
             }
         });
     }
