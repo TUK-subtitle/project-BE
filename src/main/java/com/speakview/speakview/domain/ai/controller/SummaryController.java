@@ -9,6 +9,8 @@ import com.speakview.speakview.domain.memo.dto.MemoResponse;
 import com.speakview.speakview.domain.memo.service.MemoService;
 import com.speakview.speakview.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -33,8 +35,14 @@ public class SummaryController {
             summary = "강의 종료 및 최종 요약 생성 요청 API",
             description = "실시간 강의를 종료하고, 그동안 쌓인 1분 단위 요약본들을 합쳐서 서론-본론-결론 형태의 최종 요약본을 생성. title을 함께 전달하면 강의명을 설정"
     )
+    @ApiResponses(@io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "강의 종료 요청이 접수되고, 최종 요약본 생성이 백그라운드에서 시작됩니다. title이 전달된 경우 강의명이 함께 저장됩니다."
+    ))
     public ApiResponse<String> endLecture(
+            @Parameter(description = "강의(Content) ID", example = "1", required = true)
             @PathVariable Long contentId,
+            @Parameter(description = "강의명, 전달하면 해당 강의의 제목으로 설정", example = "3주차 강의")
             @RequestParam(required = false) String title
     ) {
         // 강의명이 전달된 경우 저장
@@ -56,7 +64,14 @@ public class SummaryController {
             summary = "특정 강의의 최종 요약본 조회 API",
             description = "강의명, 최종 요약본 생성 시간, 전체 요약, 1분 단위 실시간 요약 리스트, 메모 리스트를 함께 조회. 아직 생성 중이거나 데이터가 없을 경우 안내 메시지가 반환"
     )
-    public ApiResponse<SummaryResultResponse> getSummary(@PathVariable Long contentId) {
+    @ApiResponses(@io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "강의명, 생성 시간, 최종 요약본, 실시간 요약 리스트, 메모 리스트가 함께 반환됩니다. 최종 요약본이 아직 없으면 생성 시간은 null, 요약 텍스트 자리에는 안내 메시지가 반환됩니다."
+    ))
+    public ApiResponse<SummaryResultResponse> getSummary(
+            @Parameter(description = "강의(Content) ID", example = "1", required = true)
+            @PathVariable Long contentId
+    ) {
         String title = contentService.getTitle(contentId);
 
         Summary finalSummary = realtimeSummaryService.getFinalSummary(contentId).orElse(null);
