@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: speakview-postgres
+    environment:
+      POSTGRES_DB: speakview
+      POSTGRES_USER: speakview
+      POSTGRES_PASSWORD: speakview
+    ports:
+      - "5432:5432"
+    volumes:
+      - speakview-pg-data:/var/lib/postgresql/data
+
+volumes:
+  speakview-pg-data:
