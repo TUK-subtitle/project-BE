@@ -9,6 +9,8 @@ import com.speakview.speakview.domain.ai.event.LectureEndedEvent;
 import com.speakview.speakview.domain.ai.repository.ContentRepository;
 import com.speakview.speakview.domain.ai.repository.SummaryRepository;
 import com.speakview.speakview.domain.user.entity.User;
+import com.speakview.speakview.global.exception.CustomException;
+import com.speakview.speakview.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -51,11 +54,6 @@ public class RealtimeSummaryService {
 
     private final Map<Long, List<String>> textBufferMap = new ConcurrentHashMap<>();
     private final Map<Long, Long> timerMap = new ConcurrentHashMap<>();
-
-    public void addSentenceToBuffer(String sentence) {
-        Long defaultContentId = 1L;
-        addSentenceToBuffer(defaultContentId, sentence);
-    }
 
     public void addSentenceToBuffer(Long contentId, String sentence) {
         // 버퍼에 텍스트 추가
@@ -133,7 +131,7 @@ public class RealtimeSummaryService {
     @Transactional
     public void saveSummaryToDb(Long contentId, String summaryText, SummaryType type) {
         Content content = contentRepository.findById(contentId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 강의를 찾을 수 없습니다. ID: " + contentId));
+                .orElseThrow(() -> new CustomException(ErrorCode.CONTENT_NOT_FOUND, "contentId=" + contentId));
 
         User user = content.getUser();
 
@@ -208,10 +206,13 @@ public class RealtimeSummaryService {
     }
 
     @Transactional(readOnly = true)
-    public String getFinalSummary(Long contentId) {
-        return summaryRepository.findFirstByContentIdAndTypeOrderByCreatedAtDesc(contentId, SummaryType.FINAL)
-                .map(Summary::getText)
-                .orElse("아직 최종 요약본이 생성되지 않았거나 해당 강의를 찾을 수 없습니다.");
+    public Optional<Summary> getFinalSummary(Long contentId) {
+        return summaryRepository.findFirstByContentIdAndTypeOrderByCreatedAtDesc(contentId, SummaryType.FINAL);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Summary> getMinuteSummaries(Long contentId) {
+        return summaryRepository.findAllByContentIdAndTypeOrderByCreatedAtAsc(contentId, SummaryType.MINUTE);
     }
 
     @EventListener
