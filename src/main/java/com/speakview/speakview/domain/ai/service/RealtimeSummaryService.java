@@ -39,6 +39,7 @@ public class RealtimeSummaryService {
     private final SocketIOServer socketIOServer;
     private final SummaryRepository summaryRepository;
     private final ContentRepository contentRepository;
+    private final AudioArchiveService audioArchiveService;
 
     @Value("${GPT_API_KEY}")
     private String gptApiKey;
@@ -219,6 +220,8 @@ public class RealtimeSummaryService {
     public void onLectureEnded(LectureEndedEvent event) {
         Long contentId = event.getContentId();
         log.info("LectureEndedEvent 수신: contentId={}", contentId);
+
+        audioArchiveService.finalizeAudio(contentId);
 
         processSummaryForContent(contentId);
 
