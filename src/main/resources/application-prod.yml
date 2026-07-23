@@ -12,9 +12,3 @@ spring:
     properties:
       hibernate:
         show_sql: false
-aws:
-  s3:
-    region: ap-northeast-2
-    bucket: your-bucket-name
-    key-prefix: audio
-    cloudfront-domain: ""

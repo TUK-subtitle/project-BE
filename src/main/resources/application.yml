@@ -26,8 +26,11 @@ gemini:
   api-key: ${GEMINI_API_KEY}
 
 aws:
+  credentials:
+    access-key: ${AWS_ACCESS_KEY}
+    secret-key: ${AWS_SECRET_KEY}
   s3:
     region: ap-northeast-2
-    bucket: your-bucket-name
+    bucket: speakview-audio-2026
     key-prefix: audio
     cloudfront-domain: ""
