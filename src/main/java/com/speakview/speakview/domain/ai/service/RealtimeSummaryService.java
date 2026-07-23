@@ -53,11 +53,6 @@ public class RealtimeSummaryService {
     private final Map<Long, List<String>> textBufferMap = new ConcurrentHashMap<>();
     private final Map<Long, Long> timerMap = new ConcurrentHashMap<>();
 
-    public void addSentenceToBuffer(String sentence) {
-        Long defaultContentId = 1L;
-        addSentenceToBuffer(defaultContentId, sentence);
-    }
-
     public void addSentenceToBuffer(Long contentId, String sentence) {
         // 버퍼에 텍스트 추가
         textBufferMap.computeIfAbsent(contentId, k -> Collections.synchronizedList(new ArrayList<>())).add(sentence);
