@@ -34,6 +34,8 @@ public class RealtimeSttService {
     private final SocketIOServer socketIOServer;
     private final SubtitleBroadcastService subtitleService;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final AudioArchiveService audioArchiveService;
+    private final TranscriptService transcriptService;
     private final ConcurrentMap<String, Long> sessionContentMap = new ConcurrentHashMap<>();
     private volatile Long currentAudioContentId;
 
@@ -198,6 +200,22 @@ public class RealtimeSttService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private Long readTimeMs(JsonNode token, String... keys) {
+        for (String key : keys) {
+            if (!token.has(key)) continue;
+            JsonNode valueNode = token.get(key);
+            if (!valueNode.isNumber()) continue;
+
+            double value = valueNode.asDouble();
+
+            if (key.endsWith("_ms") || key.endsWith("Ms")) {
+                return (long) value;
+            }
+            return Math.round(value * 1000.0);
+        }
+        return null;
     }
 
     /**
