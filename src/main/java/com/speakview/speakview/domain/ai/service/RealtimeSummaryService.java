@@ -9,6 +9,8 @@ import com.speakview.speakview.domain.ai.event.LectureEndedEvent;
 import com.speakview.speakview.domain.ai.repository.ContentRepository;
 import com.speakview.speakview.domain.ai.repository.SummaryRepository;
 import com.speakview.speakview.domain.user.entity.User;
+import com.speakview.speakview.global.exception.CustomException;
+import com.speakview.speakview.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -129,7 +131,7 @@ public class RealtimeSummaryService {
     @Transactional
     public void saveSummaryToDb(Long contentId, String summaryText, SummaryType type) {
         Content content = contentRepository.findById(contentId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 강의를 찾을 수 없습니다. ID: " + contentId));
+                .orElseThrow(() -> new CustomException(ErrorCode.CONTENT_NOT_FOUND, "contentId=" + contentId));
 
         User user = content.getUser();
 

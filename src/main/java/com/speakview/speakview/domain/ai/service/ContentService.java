@@ -8,6 +8,8 @@ import com.speakview.speakview.domain.user.entity.Subject;
 import com.speakview.speakview.domain.user.entity.User;
 import com.speakview.speakview.domain.user.repository.SubjectRepository;
 import com.speakview.speakview.domain.user.repository.UserRepository;
+import com.speakview.speakview.global.exception.CustomException;
+import com.speakview.speakview.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,10 +29,10 @@ public class ContentService {
     public Long createContent(Long userId, Long subjectId) {
         // 유저와 과목 엔티티 조회
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 유저를 찾을 수 없습니다. ID: " + userId));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "userId=" + userId));
 
         Subject subject = subjectRepository.findById(subjectId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 과목을 찾을 수 없습니다. ID: " + subjectId));
+                .orElseThrow(() -> new CustomException(ErrorCode.SUBJECT_NOT_FOUND, "subjectId=" + subjectId));
 
         // 새로운 Content(강의 방) 생성
         Content newContent = Content.builder()
@@ -46,7 +48,7 @@ public class ContentService {
     @Transactional(readOnly = true)
     public List<ContentResponse> getContents(Long userId, String subjectName) {
         if (!userRepository.existsById(userId)) {
-            throw new IllegalArgumentException("해당 유저를 찾을 수 없습니다. ID: " + userId);
+            throw new CustomException(ErrorCode.USER_NOT_FOUND, "userId=" + userId);
         }
 
         List<Content> contents = (subjectName != null)
@@ -61,7 +63,7 @@ public class ContentService {
     @Transactional
     public void updateTitle(Long contentId, String title) {
         Content content = contentRepository.findById(contentId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 강의를 찾을 수 없습니다. ID: " + contentId));
+                .orElseThrow(() -> new CustomException(ErrorCode.CONTENT_NOT_FOUND, "contentId=" + contentId));
 
         content.updateTitle(title);
     }
@@ -69,7 +71,7 @@ public class ContentService {
     @Transactional(readOnly = true)
     public String getTitle(Long contentId) {
         Content content = contentRepository.findById(contentId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 강의를 찾을 수 없습니다. ID: " + contentId));
+                .orElseThrow(() -> new CustomException(ErrorCode.CONTENT_NOT_FOUND, "contentId=" + contentId));
 
         return content.getTitle();
     }

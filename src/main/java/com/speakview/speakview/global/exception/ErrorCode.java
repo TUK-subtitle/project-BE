@@ -13,11 +13,12 @@ public enum ErrorCode {
     NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 리소스를 찾을 수 없습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다."),
 
-    CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 강의 콘텐츠가 존재하지 않습니다.");
-    /* 예를 들어 사용자 관련 404 에러를 하고싶다면,
-    NOT_FOUND_USER(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다.")
-    ErrorCode 커스텀된 거 추가 or HttpStatus 사용 안하고 커스텀 에러코드 사용
-     */
+    CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 강의 콘텐츠가 존재하지 않습니다."),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 유저를 찾을 수 없습니다."),
+    SUBJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 과목을 찾을 수 없습니다."),
+    TIMETABLE_NOT_FOUND(HttpStatus.NOT_FOUND, "시간표를 찾을 수 없습니다."),
+    DUPLICATE_LOGIN_ID(HttpStatus.CONFLICT, "이미 존재하는 아이디입니다."),
+    LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 틀렸습니다.");
 
     private final HttpStatus status;
     private final String message;

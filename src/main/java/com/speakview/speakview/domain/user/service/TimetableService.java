@@ -4,6 +4,8 @@ import com.speakview.speakview.domain.user.entity.TimeTable;
 import com.speakview.speakview.domain.user.entity.User;
 import com.speakview.speakview.domain.user.repository.TimetableRepository;
 import com.speakview.speakview.domain.user.repository.UserRepository;
+import com.speakview.speakview.global.exception.CustomException;
+import com.speakview.speakview.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -29,7 +31,7 @@ public class TimetableService {
     @Transactional
     public String uploadImage(Long userId, MultipartFile file) throws IOException {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 유저를 찾을 수 없습니다. ID: " + userId));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "userId=" + userId));
 
         String imageUrl = saveFile(file);
 
@@ -55,7 +57,7 @@ public class TimetableService {
     @Transactional
     public void deleteImage(Long userId) {
         TimeTable timetable = timetableRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("시간표를 찾을 수 없습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.TIMETABLE_NOT_FOUND, "userId=" + userId));
 
         if (timetable.getImageUrl() != null) {
             deleteFile(timetable.getImageUrl());

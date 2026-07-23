@@ -5,6 +5,8 @@ import com.speakview.speakview.domain.user.dto.UserResponse;
 import com.speakview.speakview.domain.user.dto.UserSignupRequest;
 import com.speakview.speakview.domain.user.entity.User;
 import com.speakview.speakview.domain.user.repository.UserRepository;
+import com.speakview.speakview.global.exception.CustomException;
+import com.speakview.speakview.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +21,7 @@ public class UserService {
     public UserResponse signup(UserSignupRequest request) {
 
         if (userRepository.existsByLoginId(request.getLoginId())) {
-            throw new IllegalArgumentException("이미 존재하는 아이디입니다.");
+            throw new CustomException(ErrorCode.DUPLICATE_LOGIN_ID, "loginId=" + request.getLoginId());
         }
 
         User user = User.builder()
@@ -36,10 +38,10 @@ public class UserService {
     public UserResponse login(UserLoginRequest request) {
 
         User user = userRepository.findByLoginId(request.getLoginId())
-                .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 틀렸습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.LOGIN_FAILED));
 
         if (!user.getPassword().equals(request.getPassword())) {
-            throw new IllegalArgumentException("아이디 또는 비밀번호가 틀렸습니다.");
+            throw new CustomException(ErrorCode.LOGIN_FAILED);
         }
 
         return UserResponse.from(user);
