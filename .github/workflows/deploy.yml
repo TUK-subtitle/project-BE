@@ -50,10 +50,13 @@ jobs:
             
             # RDS 비밀번호를 환경변수로 주입하며 도커를 백그라운드(-d)로 실행
             sudo docker run -d -p 8080:8080 -p 8081:8081 --name speakview-server \
-              -e EC2_HOST=172.31.39.29 \
-              -e RDS_PASSWORD=${{ secrets.RDS_PASSWORD }} \
-              -e DB_HOST=${{ secrets.DB_HOST }} \
-              -e SONIOX_API_KEY=${{ secrets.SONIOX_API_KEY }} \
-              -e GPT_API_KEY=${{ secrets.GPT_API_KEY }} \
-              -e GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
-              ${{ secrets.DOCKER_USERNAME }}/speakview-be:develop
+             -e EC2_HOST=${{ secrets.EC2_HOST }} \
+             -e RDS_PASSWORD=${{ secrets.RDS_PASSWORD }} \
+             -e DB_HOST=${{ secrets.DB_HOST }} \
+             -e SONIOX_API_KEY=${{ secrets.SONIOX_API_KEY }} \
+             -e GPT_API_KEY=${{ secrets.GPT_API_KEY }} \
+             -e GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
+             -e SPRING_PROFILES_ACTIVE=prod \
+             -e AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} \
+             -e AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }} \
+             ${{ secrets.DOCKER_USERNAME }}/speakview-be:develop
