@@ -1,5 +1,6 @@
 package com.speakview.speakview.domain.ai.service;
 
+import com.speakview.speakview.domain.ai.dto.ContentResponse;
 import com.speakview.speakview.domain.ai.entity.Content;
 import com.speakview.speakview.domain.ai.repository.ContentRepository;
 
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -39,5 +41,20 @@ public class ContentService {
         // DB에 저장 후 자동 생성된 ID 반환
         Content savedContent = contentRepository.save(newContent);
         return savedContent.getId();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ContentResponse> getContents(Long userId, String subjectName) {
+        if (!userRepository.existsById(userId)) {
+            throw new IllegalArgumentException("해당 유저를 찾을 수 없습니다. ID: " + userId);
+        }
+
+        List<Content> contents = (subjectName != null)
+                ? contentRepository.findByUser_IdAndSubject_NameOrderByCreatedAtDesc(userId, subjectName)
+                : contentRepository.findByUser_IdOrderByCreatedAtDesc(userId);
+
+        return contents.stream()
+                .map(ContentResponse::from)
+                .toList();
     }
 }

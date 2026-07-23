@@ -1,12 +1,15 @@
 package com.speakview.speakview.domain.ai.controller;
 
 import com.speakview.speakview.domain.ai.dto.ContentRequestDTO;
+import com.speakview.speakview.domain.ai.dto.ContentResponse;
 import com.speakview.speakview.domain.ai.service.ContentService;
 import com.speakview.speakview.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Tag(name = "Content", description = "강의(방) 생성 및 관리 API")
 @RestController
@@ -27,5 +30,18 @@ public class ContentController {
 
         // 프론트엔드에게 생성된 ID 반환
         return ApiResponse.success("새로운 강의가 성공적으로 생성되었습니다.", newContentId);
+    }
+
+    @GetMapping
+    @Operation(
+            summary = "마이페이지 강의 목록 조회 API",
+            description = "유저 ID로 강의(Content) 목록을 조회, subjectName을 함께 전달하면 해당 수업으로 필터링"
+    )
+    public ApiResponse<List<ContentResponse>> getContents(
+            @RequestParam Long userId,
+            @RequestParam(required = false) String subjectName
+    ) {
+        List<ContentResponse> contents = contentService.getContents(userId, subjectName);
+        return ApiResponse.success("강의 목록을 조회했습니다.", contents);
     }
 }
