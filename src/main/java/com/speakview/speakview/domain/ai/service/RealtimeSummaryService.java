@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -208,10 +209,13 @@ public class RealtimeSummaryService {
     }
 
     @Transactional(readOnly = true)
-    public String getFinalSummary(Long contentId) {
-        return summaryRepository.findFirstByContentIdAndTypeOrderByCreatedAtDesc(contentId, SummaryType.FINAL)
-                .map(Summary::getText)
-                .orElse("아직 최종 요약본이 생성되지 않았거나 해당 강의를 찾을 수 없습니다.");
+    public Optional<Summary> getFinalSummary(Long contentId) {
+        return summaryRepository.findFirstByContentIdAndTypeOrderByCreatedAtDesc(contentId, SummaryType.FINAL);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Summary> getMinuteSummaries(Long contentId) {
+        return summaryRepository.findAllByContentIdAndTypeOrderByCreatedAtAsc(contentId, SummaryType.MINUTE);
     }
 
     @EventListener

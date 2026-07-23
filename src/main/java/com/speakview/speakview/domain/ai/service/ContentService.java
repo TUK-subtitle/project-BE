@@ -57,4 +57,20 @@ public class ContentService {
                 .map(ContentResponse::from)
                 .toList();
     }
+
+    @Transactional
+    public void updateTitle(Long contentId, String title) {
+        Content content = contentRepository.findById(contentId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 강의를 찾을 수 없습니다. ID: " + contentId));
+
+        content.updateTitle(title);
+    }
+
+    @Transactional(readOnly = true)
+    public String getTitle(Long contentId) {
+        Content content = contentRepository.findById(contentId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 강의를 찾을 수 없습니다. ID: " + contentId));
+
+        return content.getTitle();
+    }
 }

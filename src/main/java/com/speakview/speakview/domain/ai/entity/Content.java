@@ -47,4 +47,8 @@ public class Content extends BaseEntity {
     @Builder.Default
     @OneToMany(mappedBy = "content", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Memo> memos = new ArrayList<>();
+
+    public void updateTitle(String title) {
+        this.title = title;
+    }
 }
