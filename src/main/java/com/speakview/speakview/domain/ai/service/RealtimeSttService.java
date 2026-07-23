@@ -4,6 +4,7 @@ import com.corundumstudio.socketio.SocketIOServer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.speakview.speakview.domain.ai.entity.TranscriptToken;
 import com.speakview.speakview.domain.ai.event.LectureEndedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -95,6 +96,7 @@ public class RealtimeSttService {
 
                 byte[] audioData = java.util.Base64.getDecoder().decode(base64Data);
                 System.out.println("[오디오] 수신, 길이: " + audioData.length + ", contentId=" + contentId);
+                audioArchiveService.appendChunk(contentId, audioData);
                 sendAudioFrame(audioData);
             } catch (IllegalArgumentException e) {
                 System.out.println("[경고] Base64 디코딩 실패: " + e.getMessage());
@@ -185,8 +187,21 @@ public class RealtimeSttService {
                         continue;
                     }
 
+                    Long startMs = readTimeMs(token, "start_ms", "startMs", "start_time");
+                    Long endMs = readTimeMs(token, "end_ms", "endMs", "end_time");
+                    Double confidence = token.has("confidence") ? token.path("confidence").asDouble() : null;
+
+                    TranscriptToken savedToken = transcriptService.saveToken(
+                            contentId, text, speaker, startMs, endMs, confidence
+                    );
+
                     ObjectNode response = objectMapper.createObjectNode();
                     response.put("text", text);
+                    response.put("tokenId", savedToken.getId());
+                    response.put("seq", savedToken.getSeq());
+                    if (startMs != null) response.put("startMs", startMs);
+                    if (endMs != null) response.put("endMs", endMs);
+                    if (confidence != null) response.put("confidence", confidence);
                     response.put("speaker", speaker);
                     response.put("contentId", contentId); // 핵심: contentId 포함
 
