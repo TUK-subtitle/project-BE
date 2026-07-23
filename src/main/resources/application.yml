@@ -24,3 +24,10 @@ openapi:
 gemini:
   api-url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   api-key: ${GEMINI_API_KEY}
+
+aws:
+  s3:
+    region: ap-northeast-2
+    bucket: your-bucket-name
+    key-prefix: audio
+    cloudfront-domain: ""
