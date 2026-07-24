@@ -31,6 +31,6 @@ aws:
     secret-key: ${AWS_SECRET_KEY}
   s3:
     region: ap-northeast-2
-    bucket: speakview-audio-2026
+    bucket: speak-view-s3
     key-prefix: audio
     cloudfront-domain: ""
